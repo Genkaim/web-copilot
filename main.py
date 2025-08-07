@@ -14,16 +14,21 @@ from PyQt6.QtWebEngineWidgets import QWebEngineView
 from PyQt6.QtWebEngineCore import QWebEngineProfile, QWebEnginePage
 
 
-class WeiboWindow(QMainWindow):
+class dsWindow(QMainWindow):
     EDGE_MARGIN = 10
     toggle_signal = pyqtSignal()
-
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Copilot")
         self.setMouseTracking(True)
         self._resizing = False
         self._always_on_top = False  # 置顶状态标志
+
+        # 设置窗口图标
+        icon_path = os.path.join(os.path.dirname(__file__), "icon.ico")
+        if os.path.exists(icon_path):
+            self.setWindowIcon(QIcon(icon_path))
+        # 如果没有找到自定义图标，可以使用默认图标或不设置
 
         self.toggle_signal.connect(self.toggle_visibility)
 
@@ -148,18 +153,20 @@ class WeiboWindow(QMainWindow):
 
 
 # 全局热键设置
+# 全局热键设置
 HOTKEY_ID = 0x0001
 MOD_CONTROL = 0x0002
 MOD_SHIFT = 0x0004
-VK_C = 0x43
+VK_D = 0x44  # 将 VK_C 改为 VK_D
 
 
-def listen_copilot_key(window_ref: WeiboWindow):
+def listen_copilot_key(window_ref: dsWindow):
+    # 将 VK_C 改为 VK_D
     if not ctypes.windll.user32.RegisterHotKey(
-        None, HOTKEY_ID, MOD_CONTROL | MOD_SHIFT, VK_C
+        None, HOTKEY_ID, MOD_CONTROL | MOD_SHIFT, VK_D
     ):
         error_code = ctypes.GetLastError()
-        print(f"❌ 注册热键失败（Ctrl+Shift+C），错误码：{error_code}")
+        print(f"❌ 注册热键失败（Ctrl+Shift+D），错误码：{error_code}")
         return
 
     try:
@@ -173,9 +180,7 @@ def listen_copilot_key(window_ref: WeiboWindow):
             ctypes.windll.user32.DispatchMessageA(ctypes.byref(msg))
     finally:
         ctypes.windll.user32.UnregisterHotKey(None, HOTKEY_ID)
-
-
-def create_tray_icon(app: QApplication, window: WeiboWindow) -> QSystemTrayIcon:
+def create_tray_icon(app: QApplication, window: dsWindow) -> QSystemTrayIcon:
     tray = QSystemTrayIcon(parent=app)
     icon_path = os.path.join(os.path.dirname(__file__), "icon.ico")
     if os.path.exists(icon_path):
@@ -187,8 +192,15 @@ def create_tray_icon(app: QApplication, window: WeiboWindow) -> QSystemTrayIcon:
 
     tray.setToolTip("Copilot")
 
-    # 为菜单和动作指定 parent 防止被回收
-    menu = QMenu(parent=tray)
+    # 组合使用窗口标志和样式表
+    menu = QMenu()
+    menu.setWindowFlags(
+        Qt.WindowType.FramelessWindowHint |
+        Qt.WindowType.NoDropShadowWindowHint |
+        Qt.WindowType.Popup
+    )
+    menu.setStyleSheet("QMenu { border: 1px solid gray; }")
+
     show_action = QAction("显示窗口", parent=tray)
     toggle_top_action = QAction("切换置顶", parent=tray)
     quit_action = QAction("退出程序", parent=tray)
@@ -206,7 +218,6 @@ def create_tray_icon(app: QApplication, window: WeiboWindow) -> QSystemTrayIcon:
     tray.show()
     return tray
 
-
 if __name__ == "__main__":
     # 打包后隐藏控制台（仅在 exe 下生效）
     if getattr(sys, 'frozen', False):
@@ -216,10 +227,10 @@ if __name__ == "__main__":
 
     app = QApplication(sys.argv)
     app.setQuitOnLastWindowClosed(False)
-    app.setOrganizationName("Copilot")
-    app.setApplicationName("Copilot")
+    app.setOrganizationName("CopilotCN")
+    app.setApplicationName("CopilotCN")
 
-    window = WeiboWindow()
+    window = dsWindow()
     window.show_custom_size(width=500)
     window.hide()
 
